@@ -1,60 +1,51 @@
-import jax, jax.numpy as jnp
+import flax.linen as nn
 from flax import nnx
-import optax
-
+import jax
 
 class MLP(nnx.Module):
   def __init__(self, din: int, dmid: int, dout: int, *, rngs: nnx.Rngs):
-    self.linear1 = nnx.Linear(din, 64, rngs=rngs)
-    self.linear2 = nnx.Linear(64, 128, rngs=rngs)
-    self.linear3 = nnx.Linear(128, 128, rngs=rngs)
-    self.linear4 = nnx.Linear(128, dout, rngs=rngs)
+    self.linear1 = nnx.Linear(din, dmid, rngs=rngs)
+    self.dropout = nnx.Dropout(rate=0.3, rngs=rngs)
+    self.bn = nnx.BatchNorm(dmid, rngs=rngs)
+    self.linear2 = nnx.Linear(dmid, dout, rngs=rngs)
 
   @nnx.jit
   def __call__(self, x: jax.Array):
     x =  self.linear1(x)
-    x = nnx.relu(x)
+    x = nnx.leaky_relu(x)
     x = self.linear2(x)
-    x = nnx.relu(x)
-    x = self.linear3(x)
-    x = nnx.relu(x)
-    x = self.linear4(x)
     return x
 
+class TransformerBlock(nn.Module):
+    model_dim: int
+    num_heads: int
+    ff_dim: int
+    
+    @nn.compact
+    def __call__(self, x):
+        x_norm = nn.LayerNorm()(x)
+        attention_output = nn.SelfAttention(num_heads=self.num_heads, qkv_features=self.model_dim)(x_norm)
+        x = x + attention_output
+        x_norm = nn.LayerNorm()(x)
+        ff_output = nn.Dense(self.ff_dim)(x_norm)
+        ff_output = nn.relu(ff_output)
+        ff_output = nn.Dense(self.model_dim)(ff_output)
+        return x + ff_output
 
-class MLP_He(nnx.Module):
-    def __init__(self, din: int, dmid: int, dout: int, *, rngs: nnx.Rngs):
-        # Calculate standard deviation for He initialization
-        initializer = jax.nn.initializers.glorot_uniform()
-        # Initialize layers with He initialization
-        self.linear1 = nnx.Linear(
-            din, dmid,
-            kernel_init=initializer,
-            rngs=rngs
-        )
-        self.dropout = nnx.Dropout(rate=0.2, rngs=rngs)
-        self.bn = nnx.BatchNorm(dmid, rngs=rngs)
-        self.linear2 = nnx.Linear(
-            dmid, dout,
-            kernel_init=initializer,
-            rngs=rngs
-        )
-
-    @nnx.jit
-    def __call__(self, x: jax.Array):
-        x = self.linear1(x)
-        x = nnx.leaky_relu(x)
-        x = self.bn(x)
-        x = self.dropout(x)
-        x = self.linear2(x)
+class Transformer(nn.Module):
+    num_layers: int
+    model_dim: int
+    num_heads: int
+    ff_dim: int
+    output_dim: int
+    
+    @nn.compact
+    def __call__(self, x):
+        x = nn.Dense(self.model_dim)(x)
+        for _ in range(self.num_layers):
+            x = TransformerBlock(self.model_dim, self.num_heads, self.ff_dim)(x)
+        x = nn.LayerNorm()(x)
+        x = nn.Dense(self.output_dim)(x)
         return x
 
-def test():
-    model = MLP(2, 16, 10, rngs=nnx.Rngs(0))
-    x, y = jnp.ones((5, 2)), jnp.ones((5, 10))
-    optimizer = nnx.Optimizer(model, optax.adam(1e-3))
-    loss = train_step(model, optimizer, x, y)
-    
-    print(f'{loss = }')
-    
-    print(f'{optimizer.step.value = }')
+
