@@ -1,0 +1,16 @@
+#!/bin/bash
+
+#SBATCH --job-name=run-em
+#SBATCH --time=12:00:00
+#SBATCH --gpus=v100:1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=4
+#SBATCH --partition=gpu
+#SBATCH --mem-per-gpu=32G
+#SBATCH --output=result/slurm-%A_%a.out
+
+module load CUDA
+module load miniconda
+conda activate gpujax
+
+python /gpfs/gibbs/project/bellinger/sk3365/rsp-emulator/emulator/embedding-transformer.py
