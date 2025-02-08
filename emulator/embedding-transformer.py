@@ -9,7 +9,7 @@ import optax, tqdm
 
 
 # fix precision loss on a100
-jax.config.update("jax_default_matmul_precision", "high")
+# jax.config.update("jax_default_matmul_precision", "high")
 
 class TransformerBlock(nn.Module):
     model_dim: int
