@@ -1,4 +1,6 @@
 import jax, jax.numpy as jnp, jax.random as random
+import orbax.checkpoint as orbax
+from flax.training import orbax_utils
 
 
 def train_test_split(key: jax.Array, X: jax.Array, y: jax.Array, split: float = 0.2, shuffle: bool = False):
@@ -34,6 +36,25 @@ def main_test():
     X_train, y_train, X_test, y_test = train_test_split(key, x, y, split=0.1, shuffle=True)
     assert X_train[0].all() == y_train[0].all()
     assert X_test[0].all() == y_test[0].all()
+
+
+def save_params(train_state, save_dir):
+    options = orbax.CheckpointManagerOptions(max_to_keep=1)  # Keep only the last 3 checkpoints
+    checkpoint_manager = orbax.CheckpointManager(save_dir, orbax.PyTreeCheckpointer(), options)
+    state_to_save = {'params': train_state.params}
+    checkpoint_manager.save(
+        step=1,
+        items=state_to_save,
+        save_kwargs={'save_args': orbax_utils.save_args_from_target(state_to_save)})
+
+def load_params(save_dir):
+    checkpoint_manager = orbax.CheckpointManager(save_dir, orbax.PyTreeCheckpointer())
+    step = checkpoint_manager.latest_step()
+    if step is None:
+        raise ValueError(f"No checkpoints found in {save_dir}")
+    restored = checkpoint_manager.restore(step)
+    params = restored['params']
+    return params
 
 
 if __name__ == '__main__':

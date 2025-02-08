@@ -8,6 +8,9 @@ from utils import *
 import optax, tqdm
 
 
+# fix precision loss on a100
+jax.config.update("jax_default_matmul_precision", "high")
+
 class TransformerBlock(nn.Module):
     model_dim: int
     num_heads: int
@@ -152,7 +155,12 @@ with tqdm.trange(num_epochs) as t:
         test_loss = test_loss_fn(state.params)
         t.set_postfix_str(f"train: {jnp.mean(jnp.array(epoch_loss)):.4f}, test: {test_loss:.4f}", refresh=False)
 
+from utils import save_params
+import os
+save_dir = os.path.abspath("./checkpoints")
+save_params(state, save_dir)
 predictions = jnp.asarray(model.apply(state.params, X_train[:11]))
+
 for i in range(10):
     plt.plot(jnp.linspace(0,1,sequence_length),predictions[i])
     plt.plot(jnp.linspace(0,1,sequence_length),y_train[i])

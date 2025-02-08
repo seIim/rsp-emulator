@@ -1,6 +1,7 @@
 import jax, jax.numpy as jnp, jax.random as random
 import pandas as pd
 
+
 def batch_generator(X: jax.Array, y: jax.Array, batch_size: int):
     """
     Util function for minibatch training with jax.
@@ -9,13 +10,11 @@ def batch_generator(X: jax.Array, y: jax.Array, batch_size: int):
         y: Targets/outputs of shape (samples,features).
         batch_size: Size of minibatches.
     """
-    num_batches = X
-    shape[0] // batch_size
+    num_batches = X.shape[0] // batch_size
     indices = jnp.arange(X.shape[0])
     for i in range(num_batches):
         batch_indices = indices[i*batch_size:(i+1)*batch_size]
         yield {'inputs': X[batch_indices], 'targets': y[batch_indices]}
-
 
 
 def generate_sine_series(y, x):
