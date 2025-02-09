@@ -1,32 +1,23 @@
-import numpyro
-import numpyro.distributions as dist
+import jax, jax.random as random, jax.numpy as jnp
 from numpyro.infer import MCMC, NUTS
+import numpyro.distributions as dist
+import numpyro
 
-# Rename the model instance to avoid naming conflict
-transformer_model = EmbeddingTransformer(
-    num_layers=num_layers,
-    model_dim=model_dim,
-    num_heads=num_heads,
-    ff_dim=ff_dim,
-    output_dim=output_dim,
-    sequence_length=sequence_length
-)
 
-# Modified probabilistic model
-def bayesian_model(y_obs):
-    # Priors (using training data statistics)
-    x = numpyro.sample('x', dist.Normal(mu, sd))  # Using original data statistics
-    # Neural network forward pass (using trained parameters)
-    pred = transformer_model.apply(state.params, x[None, :]).squeeze(axis=0)
-    # Observation noise prior
-    sigma = numpyro.sample('sigma', dist.HalfNormal(0.5))
-    # Likelihood
-    numpyro.sample('obs', dist.Normal(pred, sigma), obs=y_obs)
+def infer_inputs(y_test, body_fn, input_dim=5, num_samples=1000, num_warmup=1000, num_chains=1):
+    @jax.jit
+    def model(y_obs):
+        X = numpyro.sample("X", dist.Normal(jnp.zeros(input_dim), jnp.ones(input_dim)))
+        predictions = body_fn(X.reshape(1, -1))
+        predictions = predictions.squeeze()
+        numpyro.sample("y", dist.Normal(predictions, 0.1), obs=y_obs)
+    
+    kernel = NUTS(model)
+    mcmc = MCMC(kernel, num_warmup=num_warmup, num_samples=num_samples, num_chains=num_chains)
+    rng_key = random.PRNGKey(0)
+    mcmc.run(rng_key, y_obs=y_test)
+    
+    samples = mcmc.get_samples()
+    return samples["X"]
 
-def run_hmc_inference(y_target, num_samples=2000, num_warmup=1000):
-    nuts_kernel = NUTS(bayesian_model, init_strategy=numpyro.infer.init_to_sample)
-    mcmc = MCMC(nuts_kernel, num_warmup=num_warmup, num_samples=num_samples)
-    # Run inference
-    mcmc.run(random.PRNGKey(0), y_obs=y_target)
-    return mcmc.get_samples()
 

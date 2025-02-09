@@ -1,9 +1,7 @@
 import jax, jax.numpy as jnp, jax.random as random
 from flax.training import train_state
-import matplotlib.pyplot as plt
 from models import Transformer
 from dataloader import *
-import pandas as pd
 from utils import *
 import optax, tqdm
 
@@ -25,6 +23,7 @@ def create_train_state(rng, model, learning_rate, input_dim):
     return train_state.TrainState.create(apply_fn=model.apply, params=params, tx=tx)
 
 
+@jax.jit
 def smoothness_loss(pred):
     # Penalize large differences between consecutive predictions
     diffs = pred[:, 1:] - pred[:, :-1]
@@ -73,3 +72,20 @@ with tqdm.trange(num_epochs) as t:
             epoch_loss.append(loss) 
         test_loss = test_loss_fn(state.params)
         t.set_postfix_str(f"train: {jnp.mean(jnp.array(epoch_loss)):.4f}, test: {test_loss:.4f}", refresh=False)
+
+
+hyperparams = {'num_layers': num_layers,
+                'model_dim': model_dim,
+                'num_heads': num_heads,
+                'ff_dim': ff_dim, 
+                'output_dim': output_dim
+                }
+
+
+#save_model('ckpt', state, hyperparams)
+#s = load_model('ckpt')
+from functools import partial
+body_fn = jax.jit(partial(model.apply, state.params))
+from inference import infer_inputs
+s = infer_inputs(y_test[10], body_fn)
+print(s.shape)

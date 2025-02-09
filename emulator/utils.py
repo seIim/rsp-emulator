@@ -1,6 +1,6 @@
 import jax, jax.numpy as jnp, jax.random as random
-import orbax.checkpoint as orbax
-from flax.training import orbax_utils
+import orbax.checkpoint as ocp
+import os
 
 
 def train_test_split(key: jax.Array, X: jax.Array, y: jax.Array, split: float = 0.2, shuffle: bool = False):
@@ -45,23 +45,20 @@ def main_test():
     assert X_test[0].all() == y_test[0].all()
 
 
-def save_params(train_state, save_dir):
-    options = orbax.CheckpointManagerOptions(max_to_keep=1)  # Keep only the last 3 checkpoints
-    checkpoint_manager = orbax.CheckpointManager(save_dir, orbax.PyTreeCheckpointer(), options)
-    state_to_save = {'params': train_state.params}
-    checkpoint_manager.save(
-        step=1,
-        items=state_to_save,
-        save_kwargs={'save_args': orbax_utils.save_args_from_target(state_to_save)})
+def save_model(name, state, hyperparams):
+    checkpoint = {
+        'state': state,
+        'hyperparams': hyperparams
+    }
+    dir_path = os.path.abspath(f'./checkpoints/{name}')
+    checkpointer = ocp.PyTreeCheckpointer()
+    checkpointer.save(dir_path, checkpoint)
 
-def load_params(save_dir):
-    checkpoint_manager = orbax.CheckpointManager(save_dir, orbax.PyTreeCheckpointer())
-    step = checkpoint_manager.latest_step()
-    if step is None:
-        raise ValueError(f"No checkpoints found in {save_dir}")
-    restored = checkpoint_manager.restore(step)
-    params = restored['params']
-    return params
+
+def load_model(name):
+    dir_path = os.path.abspath(f'./checkpoints/{name}')
+    checkpointer = ocp.PyTreeCheckpointer()
+    return checkpointer.restore(dir_path)
 
 
 if __name__ == '__main__':
