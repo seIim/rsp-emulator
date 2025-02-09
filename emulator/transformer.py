@@ -35,7 +35,7 @@ def smoothness_loss(pred):
 def train_step(state, batch):
     def loss_fn(params):
         predictions = model.apply(params, batch['inputs'])
-        loss = mse_loss(predictions, batch['targets']) + 1.0 * smoothness_loss(predictions)
+        loss = mse_loss(predictions, batch['targets']) + 0.3 * smoothness_loss(predictions)
         return loss
     
     grad_fn = jax.value_and_grad(loss_fn)
@@ -73,39 +73,3 @@ with tqdm.trange(num_epochs) as t:
             epoch_loss.append(loss) 
         test_loss = test_loss_fn(state.params)
         t.set_postfix_str(f"train: {jnp.mean(jnp.array(epoch_loss)):.4f}, test: {test_loss:.4f}", refresh=False)
-
-import orbax.checkpoint as orbax
-from flax.training import orbax_utils
-import os
-save_dir = os.path.abspath("./checkpoints/")
-def save_params(train_state, save_dir):
-    options = orbax.CheckpointManagerOptions(max_to_keep=1)  # Keep only the last 3 checkpoints
-    checkpoint_manager = orbax.CheckpointManager(save_dir, orbax.PyTreeCheckpointer(), options)
-    state_to_save = {'params': train_state.params}
-    checkpoint_manager.save(
-        step=0,
-        items=state_to_save,
-        save_kwargs={'save_args': orbax_utils.save_args_from_target(state_to_save)})
-
-def load_params(save_dir):
-    checkpoint_manager = orbax.CheckpointManager(save_dir, orbax.PyTreeCheckpointer())
-    step = checkpoint_manager.latest_step()
-    if step is None:
-        raise ValueError(f"No checkpoints found in {save_dir}")
-    restored = checkpoint_manager.restore(step)
-    params = restored['params']
-    return params
-
-save_params(state, save_dir)
-predictions = jnp.asarray(model.apply(state.params, X_train[:11]))
-predictions_0 = predictions
-
-for i in range(10):
-    plt.plot(jnp.linspace(0,1,sequence_length),predictions[i])
-    plt.plot(jnp.linspace(0,1,sequence_length),y_train[i])
-    plt.savefig(f'../figs/train_preds_{i}.pdf', bbox_inches='tight')
-    plt.show()
-
-params = load_params(save_dir)
-predictions = jnp.asarray(model.apply(params, X_train[:11]))
-print(jnp.sum(predictions - predictions_0))
