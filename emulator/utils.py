@@ -29,6 +29,13 @@ def mse_loss(predicted, target):
     return  jnp.mean(jnp.square(predicted - target))
 
 
+@jax.jit
+def smoothness_loss(pred):
+    # Penalize large differences between consecutive predictions
+    diffs = pred[:, 1:] - pred[:, :-1]
+    return jnp.mean(diffs**2)
+
+
 def main_test():
     key = random.key(611)
     x = random.uniform(key=key, shape=(100,7))
