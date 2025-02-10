@@ -56,7 +56,7 @@ num_heads = 8
 ff_dim = 512
 batch_size = 512
 learning_rate = 0.001
-num_epochs = 1
+num_epochs = 100
 sequence_length = 100
 
 model = Transformer(num_layers, model_dim, num_heads, ff_dim, output_dim)
@@ -80,10 +80,8 @@ hyperparams = {'num_layers': num_layers,
                 'ff_dim': ff_dim, 
                 'output_dim': output_dim
                 }
-
-
-#save_model('ckpt', state, hyperparams)
-#s = load_model('ckpt')
+save_model('ckpt', state, hyperparams)
+s = load_model('ckpt')
 from functools import partial
 body_fn = jax.jit(partial(model.apply, state.params))
 from inference import infer_inputs

@@ -1,13 +1,13 @@
 #!/bin/bash
 
 #SBATCH --job-name=semu
-#SBATCH --time=3:00:00
-#SBATCH --gpus=a100:1
+#SBATCH --time=18:00:00
+#SBATCH --gpus=v100:1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=4
 #SBATCH --partition=gpu
 #SBATCH --mem-per-gpu=32G
-#SBATCH --output=result/a100-high-precision.out
+#SBATCH --output=result/v100-high-precision.out
 
 module load CUDA
 module load miniconda

@@ -51,14 +51,13 @@ class Transformer(nn.Module):
         return x
 
 
-
 class EmbeddingTransformer(nn.Module):
     num_layers: int
     model_dim: int
     num_heads: int
     ff_dim: int
     output_dim: int
-    sequence_length: int = 100  # Added sequence length parameter
+    sequence_length: int = 100
 
     def setup(self):
         # Learnable positional encoding
