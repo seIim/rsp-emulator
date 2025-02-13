@@ -8,7 +8,7 @@ import optax, tqdm
 
 
 # fix precision loss on a100
-#jax.config.update("jax_default_matmul_precision", "high")
+jax.config.update("jax_default_matmul_precision", "high")
 import os
 os.environ['XLA_FLAGS'] = (
     '--xla_gpu_triton_gemm_any=True '
@@ -53,11 +53,11 @@ def train_step(state, batch):
 
 
 # Hyperparameters
-num_layers = 4
+num_layers = 1
 model_dim = 512
 num_heads = 8
 ff_dim = 1024 
-batch_size = 256
+batch_size = 1024 
 learning_rate = 1e-3
 num_epochs = 2000
 sequence_length = 100
@@ -117,16 +117,16 @@ print(X_test[0])
 #import os
 #save_dir = os.path.abspath("./checkpoints")
 #save_params(state, save_dir)
-#predictions = jnp.asarray(model.apply(state.params, X_train[:11]))*std_y
 
-#for i in range(10):
-#    plt.plot(jnp.linspace(0,1,sequence_length),predictions[i])
-#    plt.plot(jnp.linspace(0,1,sequence_length),y_train[i]*std_y)
-#    plt.savefig(f'../figs/train_preds_{i}.pdf', bbox_inches='tight')
-#    plt.clf()
-#predictions = jnp.asarray(model.apply(state.params, X_test[:11]))*std_y
-#for i in range(10):
-#    plt.plot(jnp.linspace(0,1,sequence_length),predictions[i])
-#    plt.plot(jnp.linspace(0,1,sequence_length),y_test[i]*std_y)
-#    plt.savefig(f'../figs/test_preds_{i}.pdf', bbox_inches='tight')
-#    plt.clf()
+predictions = jnp.asarray(model.apply(state.params, X_train[:11]))*std_y
+for i in range(10):
+    plt.plot(jnp.linspace(0,1,sequence_length),predictions[i])
+    plt.plot(jnp.linspace(0,1,sequence_length),y_train[i]*std_y)
+    plt.savefig(f'../figs/train_preds_{i}.pdf', bbox_inches='tight')
+    plt.clf()
+predictions = jnp.asarray(model.apply(state.params, X_test[:11]))*std_y
+for i in range(10):
+    plt.plot(jnp.linspace(0,1,sequence_length),predictions[i])
+    plt.plot(jnp.linspace(0,1,sequence_length),y_test[i]*std_y)
+    plt.savefig(f'../figs/test_preds_{i}.pdf', bbox_inches='tight')
+    plt.clf()
