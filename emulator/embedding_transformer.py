@@ -8,7 +8,12 @@ import optax, tqdm
 
 
 # fix precision loss on a100
-jax.config.update("jax_default_matmul_precision", "high")
+#jax.config.update("jax_default_matmul_precision", "high")
+import os
+os.environ['XLA_FLAGS'] = (
+    '--xla_gpu_triton_gemm_any=True '
+    '--xla_gpu_enable_latency_hiding_scheduler=true '
+)
 
 
 @jax.jit
@@ -99,7 +104,7 @@ hyperparams = {'num_layers': num_layers,
                 'ff_dim': ff_dim, 
                 'output_dim': output_dim
                 }
-save_model('fin_a100', state, hyperparams)
+#save_model('fin_a100', state, hyperparams)
 #s = load_model('ckpt')
 from functools import partial
 body_fn = jax.jit(partial(model.apply, state.params))

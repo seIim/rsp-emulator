@@ -6,7 +6,7 @@ import numpyro
 
 def infer_inputs(y_test, body_fn, input_dim=5, num_samples=100, num_warmup=100, num_chains=1):
     def model(y_obs):
-        X = numpyro.sample("X", dist.Normal(jnp.zeros(input_dim), jnp.ones(input_dim)))
+        X = numpyro.sample("X", dist.Uniform(jnp.zeros(input_dim)-3, jnp.zeros(input_dim)+3))
         predictions = body_fn(X.reshape(1,-1))
         predictions = predictions.squeeze()
         numpyro.sample("y", dist.Normal(predictions, 0.1), obs=y_obs)
