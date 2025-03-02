@@ -45,10 +45,9 @@ def main_test():
     assert X_test[0].all() == y_test[0].all()
 
 
-def save_model(name, state, hyperparams):
+def save_model(name, state):
     checkpoint = {
         'state': state,
-        'hyperparams': hyperparams
     }
     dir_path = os.path.abspath(f'./checkpoints/{name}')
     checkpointer = ocp.PyTreeCheckpointer()

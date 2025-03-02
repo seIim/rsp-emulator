@@ -1,19 +1,16 @@
 import jax, jax.numpy as jnp, jax.random as random
-from models import EmbeddingTransformer
+import new
 from dataloader import *
 from utils import *
 
 
-# Hyperparameters
-num_layers = 4
-model_dim = 512
-num_heads = 8
-ff_dim = 1024 
-batch_size = 256
-learning_rate = 1e-3
-num_epochs = 2000
-sequence_length = 100
-
+jax.config.update("jax_default_matmul_precision", "high")
+import os
+os.environ['XLA_FLAGS'] = (
+    '--xla_gpu_triton_gemm_any=True '
+    '--xla_gpu_enable_latency_hiding_scheduler=true '
+)
+sequence_length=100
 # fetch dataset
 X, y = create_dataset(sequence_length=sequence_length)
 key1, key2 = random.split(random.PRNGKey(42))
@@ -27,30 +24,13 @@ X_train = (X_train - mu)/sd
 X_test = (X_test - mu)/sd
 input_dim  = X_train.shape[1]
 output_dim = y_train.shape[1]
-
-# init the model & train state
-model = EmbeddingTransformer(
-    num_layers=num_layers,
-    model_dim=model_dim,
-    num_heads=num_heads,
-    ff_dim=ff_dim,
-    output_dim=output_dim,
-    sequence_length=sequence_length
-)
-
-hyperparams = {'num_layers': num_layers,
-                'model_dim': model_dim,
-                'num_heads': num_heads,
-                'ff_dim': ff_dim, 
-                'output_dim': output_dim
-                }
-
-s = load_model('fin_a100')
+print(X_test.shape)
+model = new.ImprovedTransformer()
+s = load_model('new_arch_res')
 from functools import partial
 body_fn = jax.jit(partial(model.apply, s['state']['params']))
 from inference import infer_inputs
-s = infer_inputs(y_test[0], body_fn, num_warmup=2000, num_samples=500)
+s = infer_inputs(y_test[100], body_fn, mu, sd, 0, std_y)
+print(s.shape)
 print(s.mean(axis=0))
-print(s.std(axis=0))
-print(X_test[0])
-
+print(X_test[100])

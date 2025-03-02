@@ -28,7 +28,12 @@ def generate_sine_series(y, x):
 
 
 def create_dataset(sequence_length=100):
-    df = pd.read_csv('../data/rsp.rrab.dat', sep=r'\s+')
+    import sys
+    import os
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
+    sys.path.append(project_root)
+
+    df = pd.read_csv(f'{project_root}/data/rsp.rrab.dat', sep=r'\s+')
     df['V_A2'] = df['V_R21']*df['V_A1']
     df['V_A3'] = df['V_R31']*df['V_A1']
     df['V_phi2'] = jnp.mod(jnp.array((2*df['V_phi1'] + df['V_P21']).values), 2*jnp.pi)
