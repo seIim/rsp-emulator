@@ -4,7 +4,6 @@ import jax.random as random
 from flax.training import train_state
 import optax
 import tqdm
-
 import sys
 import os
 project_root = os.path.abspath(
@@ -16,6 +15,12 @@ from emulator.layers import Transformer
 from emulator.dataloader import *
 from emulator.utils import *
 
+# fix precision loss on a100
+jax.config.update("jax_default_matmul_precision", "high")
+os.environ['XLA_FLAGS'] = (
+    '--xla_gpu_triton_gemm_any=True '
+    '--xla_gpu_enable_latency_hiding_scheduler=true '
+)
 
 @jax.jit
 def test_loss_fn(params):

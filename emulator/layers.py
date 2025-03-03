@@ -76,11 +76,9 @@ class EmbeddingTransformer(nn.Module):
 
     @nn.compact
     def __call__(self, x):
-        # Project input features to model dimension
         x = self.feature_proj(x)
-        # Expand to sequence length and add positional encoding
         x = jnp.repeat(x[:, jnp.newaxis, :], self.sequence_length, axis=1)
-        x = x + self.pos_encoding  # Broadcast positional encoding
+        x = x + self.pos_encoding
         for _ in range(self.num_layers):
             x = TransformerBlock(self.model_dim,
                                  self.num_heads,
@@ -98,7 +96,7 @@ class FiLMGenerator(nn.Module):
         return gamma, beta
 
 
-class PhaseAwareTransformerBlock(nn.Module):
+class EmbeddingTransformerBlock(nn.Module):
     model_dim: int
     num_heads: int
     ff_dim: int
@@ -122,7 +120,7 @@ class PhaseAwareTransformerBlock(nn.Module):
         return x
 
 
-class FiLMPhaseAwareTransformer(nn.Module):
+class FiLMEmbeddingTransformer(nn.Module):
     num_layers: int = 4
     model_dim: int = 128
     num_heads: int = 8
@@ -135,7 +133,7 @@ class FiLMPhaseAwareTransformer(nn.Module):
         ])
         self.phase_encoder = nn.Dense(self.model_dim)
         self.film_generators = [FiLMGenerator(self.model_dim) for _ in range(self.num_layers)]
-        self.blocks = [PhaseAwareTransformerBlock(self.model_dim, self.num_heads, self.ff_dim)
+        self.blocks = [EmbeddingTransformerBlock(self.model_dim, self.num_heads, self.ff_dim)
                        for _ in range(self.num_layers)]
         self.output_proj = nn.Dense(1)
 

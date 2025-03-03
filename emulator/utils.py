@@ -46,16 +46,21 @@ def main_test():
 
 
 def save_model(name, state):
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                ".."))
     checkpoint = {
         'state': state,
     }
-    dir_path = os.path.abspath(f'./checkpoints/{name}')
+    dir_path = os.path.abspath(f'{project_root}/emulator/checkpoints/{name}')
     checkpointer = ocp.PyTreeCheckpointer()
     checkpointer.save(dir_path, checkpoint)
 
 
 def load_model(name):
-    dir_path = os.path.abspath(f'./checkpoints/{name}')
+    project_root = os.path.abspath(os.path.join(os.path.dirname(__file__),
+                                                ".."))
+
+    dir_path = os.path.abspath(f'{project_root}/emulator/checkpoints/{name}')
     checkpointer = ocp.PyTreeCheckpointer()
     return checkpointer.restore(dir_path)
 
